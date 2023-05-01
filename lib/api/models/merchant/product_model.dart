@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:html';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 
 ProductModel productModelFromJson(String str) =>

@@ -1,8 +1,9 @@
 import 'dart:convert';
-import 'dart:html';
-
-import 'package:flutter/cupertino.dart';
-import 'package:get/get.dart';
+import 'dart:developer';
+import 'package:dio/dio.dart';
+import 'package:get/get.dart' as getx;
+// import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_state_manager/src/simple/get_controllers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shopper/api/models/merchant/merchant_profile_model.dart';
 
@@ -10,7 +11,7 @@ import '../api_helpers.dart';
 import '../api_routes.dart';
 
 class MerchantController extends GetxController {
-  static MerchantController get instance => Get.find();
+  // static MerchantController get instance => Get.find();
 
   Map<String, String> get header => {
         'Accept': 'application/json',
@@ -20,7 +21,7 @@ class MerchantController extends GetxController {
 
   Future<Map<String, String>> headerWithToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String token = prefs.getString("token")!;
+    String token = prefs.getString("Mtoken")!;
 
     Map<String, String> headerToken = {
       'Accept': 'application/json',
@@ -96,6 +97,7 @@ class MerchantController extends GetxController {
     String? description,
     String? image,
   }) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     try {
       Map<String, dynamic> val = {
         "productName": productName,
@@ -104,12 +106,41 @@ class MerchantController extends GetxController {
         "description": description,
         "image": image,
       };
-      var responseBody =
-          await Api().post(ApiRoute.createProduct, header, jsonEncode(val));
-      var response = jsonDecode(responseBody);
-      print(response["productName"]);
-      print(responseBody);
-      return true;
+      FormData formData;
+      MultipartFile productImage;
+      String id = DateTime.now().millisecondsSinceEpoch.toString();
+      Map<String, dynamic> noMediaReq = {}..addAll(val);
+
+      if (image!.isNotEmpty) {
+        productImage = await MultipartFile.fromFile(
+          image,
+          filename: '$id/${image}',
+        );
+        formData = FormData.fromMap(val..addAll({"image": productImage}));
+        var responseBody = await Api().post(
+            ApiRoute.createProduct, header, noMediaReq,
+            multimediaRequest: formData);
+
+        var response = jsonDecode(responseBody);
+        prefs.setString("Mtoken", response["token"]);
+        print(responseBody);
+        return true;
+      } else {
+        Map<String, dynamic> val = {
+          "productName": productName,
+          "price": price,
+          "quantity": quantity,
+          "description": description,
+          "image": image,
+        };
+        var responseBody =
+            await Api().post(ApiRoute.createProduct, header, jsonEncode(val));
+        var response = jsonDecode(responseBody);
+        prefs.setString("Mtoken", response["token"]);
+        print(response["productName"]);
+        print(responseBody);
+        return true;
+      }
     } catch (e) {
       print(e);
       return false;

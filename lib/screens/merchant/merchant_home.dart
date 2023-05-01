@@ -1,11 +1,11 @@
+import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:shopper/api/repositories/merchant_repository.dart';
 import 'package:shopper/components/text_form_field.dart';
-import 'package:shopper/components/upload_image.dart';
 import 'package:file_picker/file_picker.dart';
 
 import '../../components/custom_button.dart';
@@ -20,61 +20,17 @@ class MerchantHome extends StatefulWidget {
 class _MerchantHomeState extends State<MerchantHome> {
   MerchantController merchantController = MerchantController();
 
-  UploadImage imageUploader = UploadImage();
   final formKey = GlobalKey<FormState>();
 
   final productNameController = TextEditingController();
   final priceController = TextEditingController();
   final quantityController = TextEditingController();
   final descriptionController = TextEditingController();
-  final imageController = TextEditingController();
-
-  Uint8List imageFileUint8List = Uint8List(0);
-  File imageFile = File("/Users/echatahkingdavid/Downloads/profile.png");
-  selectImageFromCamera() async {
-    try {
-      final cameraFile =
-          await ImagePicker().pickImage(source: ImageSource.camera);
-      if (cameraFile != null) {
-        return cameraFile?.path;
-      } else {
-        return '';
-      }
-    } catch (e) {
-      print(e);
-    }
-  }
-
-  selectImageFromGallery() async {
-    try {
-      final galleryFile =
-          await ImagePicker().pickImage(source: ImageSource.gallery);
-      if (galleryFile != null) {
-        String imagePath = galleryFile.path;
-        imageFileUint8List = await galleryFile.readAsBytes();
-        await imageFile.writeAsBytes(imageFileUint8List);
-        Navigator.pop(context);
-        setState(() {
-          imageFile;
-          imageFileUint8List;
-        });
-        print(imagePath);
-        return imageFileUint8List;
-      } else {
-        return '';
-      }
-    } catch (e) {
-      print(e);
-      //
-      // setState(() {
-      //   imageFileUint8List = ;
-      // });
-    }
-  }
+  String? filePath = "";
 
   String selectedImagePath = '';
   late bool option;
-  File? file = null;
+  File? file;
 
   Future selectImage() {
     return showDialog(
@@ -107,9 +63,10 @@ class _MerchantHomeState extends State<MerchantHome> {
                                 print(
                                     "result ${result?.files.first.path.toString()}");
                                 if (result != null) {
-                                  setState(() {
-                                    file = File(result.files.single.path!);
-                                  });
+                                  log(filePath!);
+                                  file = File(result.files.single.path!);
+                                  filePath = result.files.single.path!;
+                                  setState(() {});
                                 } else {
                                   //user canceled the picker
                                 }
@@ -190,14 +147,14 @@ class _MerchantHomeState extends State<MerchantHome> {
                             width: size.width * 0.35,
                             height: size.height * 0.3,
                           )
-                        : Container(
-                            height: size.height * 0.4,
-                            width: size.width * 0.4,
-                            child: Image(
-                              image: FileImage(file!),
-                            ),
+                        : Image(
+                            height: size.height * 0.3,
+                            width: size.width * 0.6,
+                            fit: BoxFit.fill,
+                            image: FileImage(file!),
                           ),
                   ),
+                  SizedBox(height: size.height * 0.02),
                   CustomTextFormField(
                     hint: 'Product name',
                     textEditingController: productNameController,
@@ -238,17 +195,24 @@ class _MerchantHomeState extends State<MerchantHome> {
                   SizedBox(height: size.height * 0.03),
                   InkWell(
                     onTap: () async {
-                      // if (formKey.currentState!.validate()) {
-                      //   bool created = await merchantController.createProduct(
-                      //       productName: productNameController.text,
-                      //       price: priceController,
-                      //       description: descriptionController.text,
-                      //       quantity: quantityController,
-                      //       image: file);
-                      //   if (created) {
-                      //     Get.to(() => const CustomerHome());
-                      //   }
-                      // }
+                      if (formKey.currentState!.validate()) {
+                        try {
+                          bool created = await merchantController.createProduct(
+                            productName: productNameController.text,
+                            price: double.tryParse(priceController.text),
+                            description: descriptionController.text,
+                            quantity: int.tryParse(quantityController.text),
+                            image: filePath,
+                          );
+                          print(filePath);
+                          print(file);
+                          if (created) {
+                            Get.back();
+                          }
+                        } catch (e) {
+                          print(e);
+                        }
+                      }
                     },
                     child: const CustomButton(
                       text: 'Create product',
