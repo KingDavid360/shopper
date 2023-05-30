@@ -9,6 +9,7 @@ import 'package:shopper/components/text_form_field.dart';
 import 'package:file_picker/file_picker.dart';
 
 import '../../components/custom_button.dart';
+import '../responsive_state/responsive_state.dart';
 
 class MerchantHome extends StatefulWidget {
   const MerchantHome({Key? key}) : super(key: key);

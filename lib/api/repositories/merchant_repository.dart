@@ -21,7 +21,7 @@ class MerchantController extends GetxController {
 
   Future<Map<String, String>> headerWithToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String token = prefs.getString("Mtoken")!;
+    String token = prefs.getString("token")!;
 
     Map<String, String> headerToken = {
       'Accept': 'application/json',
@@ -104,43 +104,25 @@ class MerchantController extends GetxController {
         "price": price,
         "quantity": quantity,
         "description": description,
-        "image": image,
+        // "image": image,
       };
       FormData formData;
       MultipartFile productImage;
       String id = DateTime.now().millisecondsSinceEpoch.toString();
       Map<String, dynamic> noMediaReq = {}..addAll(val);
 
-      if (image!.isNotEmpty) {
-        productImage = await MultipartFile.fromFile(
-          image,
-          filename: '$id/${image}',
-        );
-        formData = FormData.fromMap(val..addAll({"image": productImage}));
-        var responseBody = await Api().post(
-            ApiRoute.createProduct, header, noMediaReq,
-            multimediaRequest: formData);
+      productImage = await MultipartFile.fromFile(
+        image!,
+        filename: '$id/${image}',
+      );
+      formData = FormData.fromMap(val..addAll({"image": productImage}));
+      var responseBody = await Api().post(
+          ApiRoute.createProduct, await headerWithToken(), noMediaReq,
+          multimediaRequest: formData);
 
-        var response = jsonDecode(responseBody);
-        prefs.setString("Mtoken", response["token"]);
-        print(responseBody);
-        return true;
-      } else {
-        Map<String, dynamic> val = {
-          "productName": productName,
-          "price": price,
-          "quantity": quantity,
-          "description": description,
-          "image": image,
-        };
-        var responseBody =
-            await Api().post(ApiRoute.createProduct, header, jsonEncode(val));
-        var response = jsonDecode(responseBody);
-        prefs.setString("Mtoken", response["token"]);
-        print(response["productName"]);
-        print(responseBody);
-        return true;
-      }
+      var response = jsonDecode(responseBody);
+      print(responseBody);
+      return true;
     } catch (e) {
       print(e);
       return false;
